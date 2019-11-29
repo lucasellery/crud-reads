@@ -1,5 +1,9 @@
 # read
 
+This is a simple application only for crud study.
+
+It is like a library that we can save books, and we use the title, author and year of these books on the table.
+
 ## Running the Application Locally
 
 Run `aqueduct serve` from this directory to run the application. For running within an IDE, run `bin/main.dart`. By default, a configuration file named `config.yaml` will be used.
