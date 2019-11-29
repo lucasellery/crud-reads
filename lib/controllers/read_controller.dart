@@ -1,66 +1,66 @@
-import 'dart:async';
-import 'package:aqueduct/aqueduct.dart';
-
 import 'package:read/read.dart';
+import 'package:read/models/read_model.dart';
 
-List reads = [
-  {
-    'title': 'Sou nós',
-    'author': 'Douglas Gonçalves',
-    'year': '2019',
-  },
-  {
-    'title:': 'Quem é Jesus',
-    'author': 'Alessandro Vilas Boas',
-    'year': '2019',
-  },
-  {
-    'title': 'Confissões',
-    'author': 'Agostinho de Hipona',
-    'year': '398',
-  },
-];
+List reads = [];
 
 class ReadsController extends ResourceController {
+  ReadsController(this.context);
+
+  ManagedContext context;
+
   @Operation.get()
   Future<Response> getAllReads() async {
-    return Response.ok(reads);
+    final readQuery = Query<Read>(context);
+    return Response.ok(await readQuery.fetch());
   }
 
   @Operation.get('id')
   Future<Response> getRead(@Bind.path('id') int id) async {
-    if (id < 0 || id > reads.length - 1) {
+    final readQuery = Query<Read>(context)
+      ..where((read) => read.id).equalTo(id);
+    final read = await readQuery.fetchOne();
+
+    if (read == null) {
       return Response.notFound(body: 'The item was not found');
     }
 
-    return Response.ok(reads[id]);
+    return Response.ok(read);
   }
 
   @Operation.post()
-  Future<Response> creatNewRead() async {
-    final Map<String, dynamic> body = request.body.as();
-    reads.add(body); // mudanca aqui
-    return Response.ok(body);
+  Future<Response> creatNewRead(@Bind.body() Read body) async {
+    final readQuery = Query<Read>(context)..values = body;
+    final insertRead = await readQuery.insert();
+
+    return Response.ok(insertRead);
   }
 
   @Operation.put('id')
-  Future<Response> updatedRead(@Bind.path('id') int id) async {
-    if (id < 0 || id > reads.length - 1) {
+  Future<Response> updatedRead(
+    @Bind.path('id') int id,
+    @Bind.body() Read body,
+  ) async {
+    final readQuery = Query<Read>(context)
+      ..values = body
+      ..where((read) => read.id).equalTo(id);
+
+    final updateQuery = await readQuery.updateOne();
+    if (updateQuery == null) {
       return Response.notFound(body: 'Item was not found');
     }
-
-    final Map<String, dynamic> body = request.body.as();
-    reads[id] = body;
-
     return Response.ok('Updated read');
   }
 
   @Operation.delete('id')
   Future<Response> deletedRead(@Bind.path('id') int id) async {
-    if (id < 0 || id > reads.length - 1) {
+    final readQuery = Query<Read>(context)
+      ..where((read) => read.id).equalTo(id);
+
+    final deletedCount = await readQuery.delete();
+
+    if (deletedCount == 0) {
       return Response.notFound(body: 'Item was not found');
     }
-    reads.removeAt(id);
-    return Response.ok('Deleted read');
+    return Response.ok('Deleted $deletedCount items');
   }
 }
